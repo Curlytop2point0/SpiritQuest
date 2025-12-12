@@ -29,7 +29,7 @@ export default function DashboardScreen({ navigation }) {
     try {
       const stored = await AsyncStorage.getItem('habits') || '[]';
       let habitsArray = JSON.parse(stored);
-      habitsArray.forEach(habit => checkBadge(habit));
+      habitsArray.forEach(habit => checkBadge(habit, false));
       setHabits(habitsArray);
     } catch (error) {
       console.error('Load error:', error);
@@ -40,7 +40,7 @@ export default function DashboardScreen({ navigation }) {
   const logHabit = async (habitId) => {
     try {
       const stored = await AsyncStorage.getItem('habits') || '[]';
-      const habitsArray = JSON.parse(stored);
+      let habitsArray = JSON.parse(stored);
       const habitIndex = habitsArray.findIndex(h => h.id === habitId);
       if (habitIndex !== -1) {
         const habit = habitsArray[habitIndex];
@@ -58,7 +58,7 @@ export default function DashboardScreen({ navigation }) {
         setHabits([...habitsArray]);
         Alert.alert('Logged!', `Streak: ${habit.streak}! ${habit.streak > 1 ? 'On fire!' : 'First step taken!'}`);
 
-        checkBadge(habit);
+        checkBadge(habit, true);
         checkNudge(habit);
       }
     } catch (error) {
@@ -67,16 +67,19 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
-  const checkBadge = (habit) => {
+  const checkBadge = (habit, showAlert = true) => {
     const streak = habit.streak;
+    const currentBadge = habit.badge || 'None';
     let newBadge = 'None';
     if (streak >= 30) newBadge = 'Legendary Master';
     else if (streak >= 14) newBadge = 'Seasoned Hunter';
     else if (streak >= 7) newBadge = 'Beginner Warrior';
 
-    if (newBadge !== (habit.badge || 'None')) {
+    if (newBadge !== currentBadge) {
       habit.badge = newBadge;
-      Alert.alert('Badge Unlocked!', `Congratulations! You've earned the ${newBadge} badge for ${habit.name}! 🏆`);
+      if (showAlert) {
+        Alert.alert('Badge Unlocked!', `Congratulations! You've earned the ${newBadge} badge for ${habit.name}! 🏆`);
+      }
     }
   };
 
@@ -115,14 +118,15 @@ export default function DashboardScreen({ navigation }) {
   const saveEdit = async () => {
     try {
       const stored = await AsyncStorage.getItem('habits') || '[]';
-      const habitsArray = JSON.parse(stored);
+      let habitsArray = JSON.parse(stored);
       const index = habitsArray.findIndex(h => h.id === editingHabit);
       if (index !== -1) {
         habitsArray[index].name = editName;
         habitsArray[index].frequency = editFrequency;
         habitsArray[index].reminderTime = editTime.toTimeString().slice(0, 5);
+        habitsArray.forEach(habit => checkBadge(habit, false));
         await AsyncStorage.setItem('habits', JSON.stringify(habitsArray));
-        setHabits([...habitsArray]);
+        setHabits(habitsArray);
         Alert.alert('Saved!', 'Habit updated!');
       }
       setModalVisible(false);
@@ -134,12 +138,13 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const deleteHabit = (habitId) => {
-    Alert.alert('Delete Habit', 'Are you sure? This resets your streak.', [
+    Alert.alert('Delete Habit', 'Are you sure? This will reset your streak.', [
       { text: 'Cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         try {
           const stored = await AsyncStorage.getItem('habits') || '[]';
-          const filtered = JSON.parse(stored).filter(h => h.id !== habitId);
+          let filtered = JSON.parse(stored).filter(h => h.id !== habitId);
+          filtered.forEach(habit => checkBadge(habit, false));
           await AsyncStorage.setItem('habits', JSON.stringify(filtered));
           setHabits(filtered);
           Alert.alert('Deleted!', 'Habit removed.');
@@ -151,7 +156,6 @@ export default function DashboardScreen({ navigation }) {
     ]);
   };
 
-  // NEW: Logout function
   const logout = async () => {
     Alert.alert('Logout', 'This will clear all habits and return to registration.', [
       { text: 'Cancel' },
@@ -173,7 +177,7 @@ export default function DashboardScreen({ navigation }) {
   const renderHabit = ({ item }) => {
     const chartData = {
       labels: Array.from({ length: item.streak + 1 }, (_, i) => i.toString()),
-      datasets: [{ data: Array.from({ length: item.streak + 1 }, (_, i) => i), color: (o) => `rgba(134,65,244,${o})`, strokeWidth: 2 }],
+      datasets: [{ data: Array.from({ length: item.streak + 1 }, (_, i) => i), color: (o) => `rgba(37,225,237,${o})`, strokeWidth: 3 }],
     };
 
     const badgeImage = badgeIcons[item.badge] || null;
@@ -186,11 +190,22 @@ export default function DashboardScreen({ navigation }) {
           {badgeImage && <Image source={badgeImage} style={styles.badgeIcon} resizeMode="contain" />}
           <Text style={styles.badge}>{item.badge || 'No Badge Yet'}</Text>
         </View>
-        <LineChart data={chartData} width={screenWidth - 40} height={100}
-          chartConfig={{ backgroundColor: '#f5f5f5', backgroundGradientFrom: '#fff', backgroundGradientTo: '#f5f5f5', color: (o) => `rgba(0,0,0,${o})` }}
-          style={styles.chart} />
-        <Button title="Log Today" onPress={() => logHabit(item.id)} color="#4CAF50" />
-        <Button title="Edit" onPress={() => editHabit(item)} color="#2196F3" />
+        <LineChart data={chartData} width={screenWidth - 40} height={120}
+          chartConfig={{
+            backgroundColor: '#1E293B',
+            backgroundGradientFrom: '#1E293B',
+            backgroundGradientTo: '#1E293B',
+            decimalPlaces: 0,
+            color: (o) => `rgba(255,75,87,${o})`,
+            labelColor: () => '#E2E8F0',
+            style: { borderRadius: 16 },
+            propsForDots: { r: '6', strokeWidth: '2', stroke: '#FF4A57' }
+          }}
+          bezier
+          style={styles.chart}
+        />
+        <Button title="Log Today" onPress={() => logHabit(item.id)} color="#ED1E79" />
+        <Button title="Edit" onPress={() => editHabit(item)} color="#25E1ED" />
         <Button title="Delete" onPress={() => deleteHabit(item.id)} color="#f44336" />
       </View>
     );
@@ -198,23 +213,22 @@ export default function DashboardScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Your Habits Dashboard</Text>
-        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-
       {habits.length === 0 ? (
         <Text style={styles.emptyText}>No habits yet—create one to get started!</Text>
       ) : (
         <FlatList data={habits} renderItem={renderHabit} keyExtractor={item => item.id.toString()} style={styles.list} />
       )}
 
-      {/* Floating Action Button – Create New Habit */}
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('Habit')}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      {/* Bottom Bar: Logout (left) + Create FAB (right) */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('Habit')}>
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Edit Modal */}
       <Modal animationType="slide" transparent={false} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
@@ -246,40 +260,40 @@ export default function DashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#f5f5f5' },
-  header: { 
+  container: { flex: 1, backgroundColor: '#0F172A', padding: 20 },
+  list: { flex: 1 },
+  habitItem: { padding: 15, borderWidth: 1, borderColor: '#25E1ED', backgroundColor: '#1E293B', marginBottom: 15, borderRadius: 10 },
+  habitName: { fontSize: 20, fontWeight: 'bold', color: '#FF4A57' },
+  habitDetail: { fontSize: 14, color: '#E2E8F0', marginBottom: 5 },
+  badgeContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  badgeIcon: { width: 50, height: 50, marginRight: 10 },
+  badge: { fontSize: 14, color: '#FFEB0B', fontWeight: 'bold' },
+  chart: { marginVertical: 10, borderRadius: 10 },
+  emptyText: { textAlign: 'center', color: '#E2E8F0', fontStyle: 'italic', marginTop: 50, fontSize: 18 },
+  bottomBar: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: 20 
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#1E293B',
+    borderTopWidth: 1,
+    borderColor: '#25E1ED'
   },
-  title: { fontSize: 24, color: '#333' },
   logoutButton: { padding: 10 },
-  logoutText: { color: '#f44336', fontWeight: 'bold' },
-  list: { flex: 1 },
-  habitItem: { padding: 15, borderBottomWidth: 1, borderColor: '#ddd', backgroundColor: 'white', marginBottom: 10, borderRadius: 5 },
-  habitName: { fontSize: 18, fontWeight: 'bold' },
-  habitDetail: { fontSize: 14, color: '#666', marginBottom: 5 },
-  badgeContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  badgeIcon: { width: 40, height: 40, marginRight: 10 },
-  badge: { fontSize: 12, color: '#4CAF50', fontWeight: 'bold' },
-  chart: { marginVertical: 8 },
-  emptyText: { textAlign: 'center', color: '#999', fontStyle: 'italic' },
+  logoutText: { color: '#FF4A57', fontWeight: 'bold' },
   fab: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
     alignItems: 'center',
     justifyContent: 'center',
-    right: 30,
-    bottom: 30,
-    backgroundColor: '#4CAF50',
-    borderRadius: 30,
-    elevation: 8,
+    backgroundColor: '#ED1E79',
+    borderRadius: 35,
+    elevation: 10,
   },
-  fabText: { fontSize: 36, color: 'white' },
-  modalContainer: { flex: 1, justifyContent: 'center', padding: 20 },
-  modalTitle: { fontSize: 24, textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: '#ddd', padding: 10, marginBottom: 10, borderRadius: 5 },
+  fabText: { fontSize: 40, color: 'white' },
+  modalContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#0F172A' },
+  modalTitle: { fontSize: 24, textAlign: 'center', marginBottom: 20, color: '#25E1ED' },
+  input: { borderWidth: 1, borderColor: '#25E1ED', padding: 12, margin: 10, borderRadius: 5, backgroundColor: '#1E293B', color: '#E2E8F0' },
   timePickerContainer: { margin: 20, alignItems: 'center' },
 });

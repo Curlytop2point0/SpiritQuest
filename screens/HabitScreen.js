@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, Platform } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Alert, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -20,7 +20,7 @@ export default function HabitScreen({ navigation }) {
       return;
     }
 
-    const reminderTime = time.toTimeString().slice(0, 5); // "HH:MM"
+    const reminderTime = time.toTimeString().slice(0, 5);
 
     const newHabit = {
       id: Date.now().toString(),
@@ -46,12 +46,11 @@ export default function HabitScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create New Habit</Text>
-      <TextInput style={styles.input} placeholder="Habit Name (e.g., Study)" value={name} onChangeText={setName} />
-      <TextInput style={styles.input} placeholder="Frequency (e.g., Daily)" value={frequency} onChangeText={setFrequency} />
+      <TextInput style={styles.input} placeholder="Habit Name (e.g., Study)" value={name} onChangeText={setName} placeholderTextColor="#64748B" />
+      <TextInput style={styles.input} placeholder="Frequency (e.g., Daily)" value={frequency} onChangeText={setFrequency} placeholderTextColor="#64748B" />
 
       <View style={styles.timePickerContainer}>
-        <Button title={`Reminder Time: ${time.toTimeString().slice(0, 5)}`} onPress={() => setShowPicker(true)} />
+        <Button title={`Reminder Time: ${time.toTimeString().slice(0, 5)}`} onPress={() => setShowPicker(true)} color="#ED1E79" />
         {showPicker && (
           <DateTimePicker
             value={time}
@@ -63,14 +62,13 @@ export default function HabitScreen({ navigation }) {
         )}
       </View>
 
-      <Button title="Create Habit" onPress={handleCreate} />
+      <Button title="Create Habit" onPress={handleCreate} color="#25E1ED" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f5f5f5' },
-  title: { fontSize: 24, textAlign: 'center', marginBottom: 20, color: '#333' },
-  input: { borderWidth: 1, borderColor: '#ddd', padding: 12, margin: 10, borderRadius: 5, backgroundColor: 'white' },
+  container: { flex: 1, padding: 20, backgroundColor: '#0F172A', justifyContent: 'center' },
+  input: { borderWidth: 1, borderColor: '#25E1ED', padding: 12, margin: 10, borderRadius: 8, backgroundColor: '#1E293B', color: '#E2E8F0' },
   timePickerContainer: { margin: 20, alignItems: 'center' },
 });
