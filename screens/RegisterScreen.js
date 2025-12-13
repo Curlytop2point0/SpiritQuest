@@ -60,7 +60,7 @@ export default function RegisterScreen({ navigation }) {
           secureTextEntry
         />
 
-        <Button title="Register" onPress={handleRegister} color="#ED1E79" />
+        <Button title="Begin SpiritQuest" onPress={handleRegister} color="#ED1E79" />
       </View>
     </KeyboardAvoidingView>
   );
